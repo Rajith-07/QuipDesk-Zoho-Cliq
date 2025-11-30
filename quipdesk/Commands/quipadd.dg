@@ -1,0 +1,74 @@
+
+info arguments;
+arg = arguments;
+task_form = {"type":"form","title":"QuipDesk - Add Todo","name":"addquip","hint":"Create & add a new todo","button_label":"Submit","inputs":{{"label":"To-do","name":"todo","placeholder":"eg. Fix website issues by EOD","hint":"Description of the task to-do","min_length":"0","max_length":"150","mandatory":true,"type":"text"},{"type":"select","name":"task_category","label":"Category","hint":"Select a task Category","placeholder":"Select a task Category","mandatory":true,"value":"","options":{{"label":"Work/Projects","value":"work","description":""},{"label":"Meeting","value":"meeting","description":""},{"label":"HR","value":"hr","description":""},{"label":"Personal","value":"personal","description":""}}},{"label":"Assigned to","name":"assignedto","placeholder":"Select contact(s)","multiple":true,"mandatory":false,"type":"native_select","data_source":"contacts"},{"label":"Due Date","name":"duedate","placeholder":"Add a due date","mandatory":true,"type":"date"},{"label":"Priority","name":"priority","mandatory":true,"type":"radio","options":{{"value":"low","label":"Low"},{"value":"medium","label":"Medium"},{"value":"high","label":"High"}}}},"action":{"type":"invoke.function","name":"quipadd"}};
+if(arg == "")
+{
+	return task_form;
+}
+else
+{
+	response = Map();
+	system_context = "You are a Todo Assistant for Zoho Cliq. Current time: " + zoho.currenttime + ". Analyze the task and return JSON: todo: brief task text, taskcategory: (work/meeting/hr/personal), duedate: yyyy-MM-dd'T'HH:mm:ss format only, priority: (low/medium/high)";
+	final_prompt = system_context + "\nUser: " + arg + "\nAssistant:";
+	// Fetch API Key
+	query_map = Map();
+	criteria_string = "zohoid==" + user.get("id");
+	query_map.put("criteria",criteria_string);
+	response_map = zoho.cliq.getRecords("quiptodousers",query_map);
+	if(response_map.get("status") == "SUCCESS" && response_map.get("list").size() > 0)
+	{
+		user_api_key = response_map.get("list").get(0).get("apikey");
+	}
+	else
+	{
+		err_msg = "Error: No record found for " + user.get("id");
+		return {"text":err_msg};
+	}
+	// Gemini API URL
+	url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + user_api_key;
+	// Headers
+	header = {"Content-Type":"application/json"};
+	// Build Request
+	params = Map();
+	contents_list = List();
+	parts_map = {"text":final_prompt};
+	content_map = {"parts":{parts_map}};
+	contents_list.add(content_map);
+	params.put("contents",contents_list);
+	// Call Gemini
+	geminiResponse = invokeurl
+	[
+		url :url
+		type :POST
+		parameters:params.toString()
+		headers:header
+		detailed:true
+	];
+	info "Gemini Raw Response: " + geminiResponse;
+	// If success
+	if(geminiResponse.get("responseCode") == 200)
+	{
+		text = geminiResponse.get("responseText").get("candidates").get(0).get("content").get("parts").get(0).get("text");
+		raw_text = text.trim();
+		// find the first occurrence of "{"
+		start_index = raw_text.indexOf("{");
+		if(start_index != -1)
+		{
+			clean_json = raw_text.substring(start_index);
+		}
+		else
+		{
+			clean_json = raw_text;
+		}
+		task_map = clean_json.toMap();
+		info task_map;
+		ai_desc = task_map.get("todo");
+		ai_category = task_map.get("taskcategory");
+		ai_duedate = task_map.get("duedate");
+		ai_priority = task_map.get("priority");
+		return {"type":"form","title":"QuipDesk - Add Todo","name":"addquip","hint":"Create & add a new todo","button_label":"Submit","inputs":{{"label":"To-do","name":"todo","placeholder":"eg. Fix website issues by EOD","value":ai_desc,"hint":"Description of the task to-do","min_length":"0","max_length":"150","mandatory":true,"type":"text"},{"type":"select","name":"task_category","label":"Category","hint":"Select a task Category","placeholder":"Select a task Category","mandatory":true,"value":ai_category,"options":{{"label":"Work/Projects","value":"work","description":""},{"label":"Meeting","value":"meeting","description":""},{"label":"HR","value":"hr","description":""},{"label":"Personal","value":"personal","description":""}}},{"label":"Assigned to","name":"assignedto","placeholder":"Select contact(s)","multiple":true,"mandatory":false,"type":"native_select","data_source":"contacts"},{"label":"Due Date","name":"duedate","placeholder":"Add a due date","value":{"date_time":ai_duedate,"time_zone_id":"Asia/Kolkata"},"mandatory":false,"type":"datetime"},{"label":"Priority","name":"priority","mandatory":true,"type":"radio","value":ai_priority,"options":{{"value":"low","label":"Low"},{"value":"medium","label":"Medium"},{"value":"high","label":"High"}}}},"action":{"type":"invoke.function","name":"quipadd"}};
+	}
+	// Else → Error
+	return {"text":"Error: " + geminiResponse.get("responseText").get("error").get("message")};
+}

@@ -1,0 +1,47 @@
+response = Map();
+info message;
+// Add system context here
+system_context = "You are a smart Todo Assistant for Zoho Cliq. \n You support commands: \n1) /quipadd \n2) /quippending \n3) /quipmarkascomplete(id) \nYour job is to respond intelligently and trigger these functions when appropriate.";
+final_prompt = system_context + "\nUser: " + message + "\nAssistant:";
+query_map = Map();
+criteria_string = "zohoid==" + user.get("id");
+query_map.put("criteria",criteria_string);
+response_map = zoho.cliq.getRecords("quiptodousers",query_map);
+if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+{
+	user_api_key = response_map.get("list").get(0).get("apikey");
+}
+// Gemini API endpoint (Flash model)
+url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + user_api_key;
+// Headers
+header = Map();
+header.put("Content-Type","application/json");
+// Body params
+params = Map();
+contents_list = List();
+parts_map = Map();
+parts_map.put("text",final_prompt);
+content_map = Map();
+content_map.put("parts",{parts_map});
+contents_list.add(content_map);
+params.put("contents",contents_list);
+geminiResponse = invokeurl
+[
+	url :url
+	type :POST
+	parameters:params.toString()
+	headers:header
+	detailed:true
+];
+info "Gemini Raw Response: " + geminiResponse;
+// Parse Gemini response
+if(geminiResponse.get("responseCode") == 200)
+{
+	text = geminiResponse.get("responseText").get("candidates").get(0).get("content").get("parts").get(0).get("text");
+	response.put("text",text);
+}
+else
+{
+	response.put("text","Error: " + geminiResponse.get("responseText").get("error").get("message"));
+}
+return response;

@@ -1,0 +1,11 @@
+Fiedl Type - Field Display Name - Field unique Name - default value
+Text - Assigned To - assignedto
+Number - Completed At - completedat - 0
+Number - Created At - createdat - 0
+Number - Due Date - duedate - 0 - mandatory
+Boolean - Is Completed? - iscompleted - false - mandatory
+Number - Last Updated At - lastupdatedat - 0
+Text - Priority - priority - - mandatory
+Text - Task Category - taskcategory
+Large Text - To-do - todo - mandatory
+Text - ZohoId - zohoid - mandatory

@@ -1,0 +1,11 @@
+response = Map();
+// Get form values
+formValues = form.get("values");
+info formValues;
+api_key = formValues.get("apikey");
+values_map = Map();
+values_map.put("apikey",api_key);
+values_map.put("zohoid",user.get("id"));
+response_map = zoho.cliq.createRecord("quiptodousers",values_map);
+response.put("text","Successfully Configured! You can use AI in Quip_Todo now!");
+return response;

@@ -1,0 +1,54 @@
+
+response = Map();
+formValues = form.get("values");
+// info "FORM SUBMITTED: " + formValues;
+todoText = formValues.get("todo");
+taskCategory = formValues.get("task_category");
+priority = formValues.get("priority").get("label");
+dueObj = formValues.get("duedate");
+dueDateTime = dueObj.get("date_time");
+dueTZ = dueObj.get("time_zone_id");
+dueEpoch = dueDateTime.unixEpoch(dueTZ);
+// ----------------------------------------------------------
+// 3️⃣ Handle assigned users (multi-select contacts)
+// If none chosen → empty list
+// ----------------------------------------------------------
+assignedUsers = list();
+if(formValues.containsKey("assignedto"))
+{
+	assignedUsers = formValues.get("assignedto");
+}
+// Convert to comma-separated string (DB-friendly)
+assignedToString = "";
+if(assignedUsers.size() > 0)
+{
+	assignedToString = assignedUsers.toString(",");
+}
+record = Map();
+record.put("zohoid",user.get("id"));
+record.put("todo",todoText);
+record.put("iscompleted","FALSE");
+// Default
+record.put("taskcategory",taskCategory);
+record.put("priority",priority);
+record.put("duedate",dueEpoch);
+record.put("assignedto",assignedToString);
+// comma-separated
+record.put("createdat",zoho.currenttime.toString().unixEpoch());
+record.put("lastupdatedat",zoho.currenttime.toString().unixEpoch());
+record.put("completedat","");
+// empty until completed
+// info "INSERTING RECORD: " + record;
+result = zoho.cliq.createRecord("quiptodo",record);
+// info "DB RESULT: " + result;
+if(result.get("status").equalsIgnoreCase("SUCCESS"))
+{
+	response.put("type","banner");
+	response.put("text","✅ Todo added successfully to Quip To-dos!");
+}
+else
+{
+	response.put("type","banner");
+	response.put("text","❌ Could not add todo. Please try again.");
+}
+return response;

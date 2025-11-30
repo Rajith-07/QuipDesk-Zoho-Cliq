@@ -1,0 +1,9 @@
+if(newuser)
+{
+	return {"type":"form","title":"Configure API Key","name":"configapikey","hint":"Configure your api key to access AI features!","button_label":"Submit","inputs":{{"label":"API Key","name":"apikey","placeholder":"XXXXXXXXXXX","min_length":"0","max_length":"150","mandatory":true,"type":"text"}},"action":{"type":"invoke.function","name":"configureapikey"}};
+}
+else
+{
+	message = "Woohoo! Glad that you subscribed back! " + user.get("first_name") + " :wink:";
+	return {"text":message};
+}

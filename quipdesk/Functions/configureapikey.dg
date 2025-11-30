@@ -1,0 +1,10 @@
+response = Map();
+formValues = form.get("values");
+info formValues;
+api_key = formValues.get("apikey");
+info api_key;
+values_map = Map();
+values_map.put("apikey",api_key);
+values_map.put("zohoid",user.get("id"));
+response_map = zoho.cliq.createRecord("quiptodousers",values_map);
+return Map();

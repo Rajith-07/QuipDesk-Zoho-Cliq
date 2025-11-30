@@ -1,0 +1,114 @@
+
+// --------------------------------------------
+// Slash Command: /quipedit <id>
+// --------------------------------------------
+// Ensure an ID was provided
+todoID = arguments.get("id");
+if(todoID == null || todoID == "")
+{
+	return {"type":"banner","text":"❌ Please provide a todo ID. Example: /quipedit 293849200345"};
+}
+// --------------------------------------------
+// Fetch record from your DB table
+// --------------------------------------------
+query = Map();
+query.put("criteria","id==" + todoID);
+resp = zoho.cliq.getRecords("todo",query);
+if(resp.get("list").isEmpty())
+{
+	return {"type":"banner","text":"❌ No todo found for ID: " + todoID};
+}
+record = resp.get("list").get(0);
+info record;
+// --------------------------------------------
+// Build Edit Form
+// --------------------------------------------
+form = Map();
+form.put("type","form");
+form.put("title","QuipDesk - Edit Todo");
+form.put("name","quipedit_form");
+form.put("hint","Modify the details of your task");
+form.put("button_label","Update");
+// --------------------------------------------
+// Build Inputs
+// --------------------------------------------
+inputs = List();
+// Hidden id field
+idField = Map();
+idField.put("type","text");
+idField.put("name","todo_id");
+idField.put("value",todoID);
+idField.put("visible",false);
+inputs.add(idField);
+// Todo
+todoField = Map();
+todoField.put("type","text");
+todoField.put("label","To-do");
+todoField.put("name","todo");
+todoField.put("mandatory",true);
+todoField.put("value",record.get("todo"));
+inputs.add(todoField);
+// Category
+catField = Map();
+catField.put("type","select");
+catField.put("label","Category");
+catField.put("name","task_category");
+catField.put("mandatory",true);
+catField.put("value",record.get("taskcategory"));
+catOpts = List();
+catOpts.add({"label":"Work/Projects","value":"work"});
+catOpts.add({"label":"Meeting","value":"meeting"});
+catOpts.add({"label":"HR","value":"hr"});
+catOpts.add({"label":"IT","value":"it"});
+catOpts.add({"label":"Personal","value":"personal"});
+catField.put("options",catOpts);
+inputs.add(catField);
+// Assigned To
+assignedField = Map();
+assignedField.put("label","Assigned to");
+assignedField.put("name","assignedto");
+assignedField.put("type","native_select");
+assignedField.put("multiple",true);
+assignedField.put("data_source","contacts");
+assignedRaw = record.get("assignedto");
+assignedList = list();
+if(assignedRaw != null && assignedRaw != "")
+{
+	assignedList = assignedRaw.toList(",");
+}
+assignedField.put("value",assignedList);
+inputs.add(assignedField);
+// Due Date
+dueField = Map();
+dueField.put("type","datetime");
+dueField.put("label","Due Date");
+dueField.put("name","duedate");
+dueField.put("mandatory",true);
+dueVal = Map();
+dueVal.put("date_time",record.get("duedate").toLong().toTime());
+dueField.put("value",dueVal);
+inputs.add(dueField);
+// Priority
+priorityField = Map();
+priorityField.put("type","radio");
+priorityField.put("label","Priority");
+priorityField.put("name","priority");
+priorityField.put("value",record.get("priority"));
+priorityOpts = List();
+priorityOpts.add({"value":"low","label":"Low"});
+priorityOpts.add({"value":"medium","label":"Medium"});
+priorityOpts.add({"value":"high","label":"High"});
+priorityField.put("options",priorityOpts);
+inputs.add(priorityField);
+// Attach inputs to form
+form.put("inputs",inputs);
+// --------------------------------------------
+// ACTION (Backend Function Call)
+// --------------------------------------------
+action = Map();
+action.put("type","invoke.function");
+action.put("name","quipedit");
+// <-- THIS IS YOUR EDIT FUNCTION
+form.put("action",action);
+// Return final form
+return form;

@@ -1,0 +1,13 @@
+query_map = Map();
+criteria_string = "zohoid==" + user.get("id");
+query_map.put("criteria",criteria_string);
+response_map = zoho.cliq.getRecords("quiptodousers",query_map);
+if(response_map.get("status").equalsIgnoreCase("SUCCESS") && response_map.get("list").size() > 0)
+{
+	message = "No worries! You have already configured your Gemini API Key! Prompt Away! :wink:";
+	return {"text":message};
+}
+else
+{
+	return {"type":"form","title":"Gemini API integ.","name":"apiconfig","hint":"Configures Gemini API for easier todo management.","button_label":"Submit","inputs":{{"label":"Your API Key","name":"gemini_api_key","placeholder":"eg. XXXXXXXXX","min_length":"0","max_length":"150","mandatory":true,"type":"text"}},"action":{"type":"invoke.function","name":"geminiapiconfig"}};
+}
